@@ -4,39 +4,35 @@ import pandas as pd
 st.set_page_config(page_title="CSV Dashboard", layout="wide")
 st.title("📊 Simple CSV Dashboard")
 
-st.sidebar.header("Data Source")
-uploaded_file = st.sidebar.file_uploader("Upload a CSV file", type=["csv"])
+uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
 
-# Load data (uploaded CSV or default demo CSV)
 if uploaded_file:
     df = pd.read_csv(uploaded_file)
+
+    st.subheader("Preview")
+    st.dataframe(df, use_container_width=True)
+
+    st.subheader("Filters")
+    numeric_cols = df.select_dtypes(include="number").columns.tolist()
+
+    if numeric_cols:
+        col = st.selectbox("Choose a numeric column to filter", numeric_cols)
+        min_val, max_val = float(df[col].min()), float(df[col].max())
+        low, high = st.slider("Select range", min_val, max_val, (min_val, max_val))
+        filtered = df[df[col].between(low, high)]
+    else:
+        st.info("No numeric columns found. Showing full dataset.")
+        filtered = df
+
+    st.subheader("Filtered Data")
+    st.write(f"Rows: {len(filtered)}")
+    st.dataframe(filtered, use_container_width=True)
+
+    st.subheader("Charts")
+    if numeric_cols:
+        st.bar_chart(filtered[col])
+        st.line_chart(filtered[col])
+    else:
+        st.info("Upload a CSV with at least one numeric column to see charts.")
 else:
-    df = pd.read_csv("data/titanic.csv")
-    st.info("Using built-in Titanic dataset. Upload a CSV to replace it.")
-
-# Everything below should run for BOTH cases
-st.subheader("Preview")
-st.dataframe(df, use_container_width=True)
-
-st.subheader("Filters")
-numeric_cols = df.select_dtypes(include="number").columns.tolist()
-
-if numeric_cols:
-    col = st.selectbox("Choose a numeric column to filter", numeric_cols)
-    min_val, max_val = float(df[col].min()), float(df[col].max())
-    low, high = st.slider("Select range", min_val, max_val, (min_val, max_val))
-    filtered = df[df[col].between(low, high)]
-else:
-    st.info("No numeric columns found. Showing full dataset.")
-    filtered = df
-
-st.subheader("Filtered Data")
-st.write(f"Rows: {len(filtered)}")
-st.dataframe(filtered, use_container_width=True)
-
-st.subheader("Charts")
-if numeric_cols:
-    st.bar_chart(filtered[col])
-    st.line_chart(filtered[col])
-else:
-    st.info("Upload a CSV with at least one numeric column to see charts.")
+    st.caption("Upload a CSV file to begin.")
